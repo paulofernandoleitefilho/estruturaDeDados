@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualizador Interativo - Pilha Sequencial</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .code-font {
+            font-family: 'Fira Code', monospace;
+        }
+        
+        /* Transição e Animação dos Blocos da Pilha */
+        .stack-item {
+            transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes pushAnim {
+            0% { transform: translateY(-40px); opacity: 0; scale: 0.9; }
+            100% { transform: translateY(0); opacity: 1; scale: 1; }
+        }
+        .anim-push {
+            animation: pushAnim 0.4s ease-out forwards;
+        }
+
+        @keyframes popAnim {
+            0% { transform: translateY(0); opacity: 1; }
+            100% { transform: translateY(-50px); opacity: 0; scale: 0.8; }
+        }
+        .anim-pop {
+            animation: popAnim 0.4s ease-in forwards;
+        }
+
+        @keyframes highlightCompare {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7); }
+            50% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(245, 158, 11, 0); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+        }
+        .highlight-active {
+            animation: highlightCompare 0.8s infinite;
+            border-color: #f59e0b !important;
+            background-color: #451a03 !important;
+        }
+
+        @keyframes successPulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.08); box-shadow: 0 0 20px rgba(16, 185, 129, 0.6); }
+            100% { transform: scale(1); }
+        }
+        .highlight-found {
+            animation: successPulse 0.7s ease-in-out forwards;
+            border-color: #10b981 !important;
+            background-color: #064e3b !important;
+        }
+
+        /* Glassmorphism */
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.75);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col justify-between overflow-x-hidden">
+
+    <!-- Header / Nav -->
+    <header class="bg-slate-900 border-b border-slate-800 p-4 shadow-xl sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+            <div class="flex items-center space-x-3">
+                <div class="bg-amber-600 p-2.5 rounded-xl shadow-lg shadow-amber-500/30">
+                    <i class="fa-solid fa-layer-group text-xl text-white"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold bg-gradient-to-r from-amber-400 to-orange-400 bg-clip-text text-transparent">
+                        Visualizador de Pilha Sequencial (Stack - LIFO)
+                    </h1>
+                    <p class="text-xs text-slate-400">Inspirado em DSA Visualizers &bull; Last-In, First-Out</p>
+                </div>
+            </div>
+
+            <!-- Slider de Velocidade -->
+            <div class="flex items-center bg-slate-800/80 px-4 py-2 rounded-xl border border-slate-700/50">
+                <i class="fa-solid fa-gauge-high text-xs text-slate-400 mr-3"></i>
+                <span class="text-xs text-slate-300 font-medium mr-3">Velocidade:</span>
+                <input type="range" id="speedSlider" min="200" max="1500" value="700" step="100" class="w-24 accent-amber-500 cursor-pointer">
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="max-w-7xl mx-auto w-full p-4 md:p-6 flex-1 flex flex-col gap-6">
+
+        <!-- Painel de Controles Principal -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+
+            <!-- Card 1: Criar Pilha Vazia & Capacidade -->
+            <div class="lg:col-span-3 glass-panel p-4 rounded-2xl flex flex-col justify-between shadow-xl">
+                <div>
+                    <div class="flex items-center text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
+                        <i class="fa-solid fa-rotate-right mr-2 text-amber-400"></i> Inicialização
+                    </div>
+                    <p class="text-xs text-slate-400 mb-2">Reinicia a pilha redefinindo o topo (<code>TOP = -1</code>).</p>
+                    <div class="mb-3">
+                        <label class="block text-[11px] font-semibold text-slate-400 mb-1">TAMANHO MÁXIMO</label>
+                        <input type="number" id="maxCapacityInput" value="8" min="1" max="12" onchange="updateMaxCapacity()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1 text-slate-100 focus:outline-none focus:border-amber-500 code-font text-sm">
+                    </div>
+                </div>
+                <button id="btnCreateEmpty" onclick="createEmptyStack()" class="w-full py-2.5 px-4 bg-rose-600/20 hover:bg-rose-600/30 text-rose-300 border border-rose-500/40 rounded-xl font-semibold text-sm transition-all flex items-center justify-center space-x-2 group active:scale-95">
+                    <i class="fa-solid fa-trash-can group-hover:rotate-12 transition-transform"></i>
+                    <span>Criar Pilha Vazia</span>
+                </button>
+            </div>
+
+            <!-- Card 2: Inserção de Item (Push) -->
+            <div class="lg:col-span-5 glass-panel p-4 rounded-2xl shadow-xl flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
+                        <i class="fa-solid fa-arrow-down-to-bracket mr-2 text-emerald-400"></i> Empilhar (Push)
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-400 mb-1">VALOR DO ITEM</label>
+                        <input type="text" id="insertValue" placeholder="Ex: 88" maxlength="4" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 placeholder-slate-600 focus:outline-none focus:border-emerald-500 code-font text-sm">
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <button id="btnPush" onclick="pushItem()" class="w-full py-2.5 px-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-semibold text-xs shadow-lg shadow-emerald-900/30 transition-all flex items-center justify-center space-x-2 active:scale-95">
+                        <i class="fa-solid fa-plus-circle"></i>
+                        <span>Empilhar Item (Push)</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Card 3: Exclusão (Pop) e Indicação de Posição (Search) -->
+            <div class="lg:col-span-4 glass-panel p-4 rounded-2xl shadow-xl flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
+                        <i class="fa-solid fa-magnifying-glass mr-2 text-amber-400"></i> Ações na Pilha
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-400 mb-1">VALOR PARA BUSCAR</label>
+                        <input type="text" id="searchValue" placeholder="Ex: Valor para localizar" maxlength="4" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-slate-100 placeholder-slate-600 focus:outline-none focus:border-amber-500 code-font text-sm mb-3">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <button id="btnSearch" onclick="searchItem()" class="py-2 px-3 bg-amber-600 hover:bg-amber-500 text-white rounded-xl font-semibold text-xs shadow-lg shadow-amber-900/30 transition-all flex items-center justify-center space-x-1.5 active:scale-95">
+                        <i class="fa-solid fa-crosshair"></i>
+                        <span>Indicar Posição</span>
+                    </button>
+                    <button id="btnPop" onclick="popItem()" class="py-2 px-3 bg-rose-600 hover:bg-rose-500 text-white rounded-xl font-semibold text-xs shadow-lg shadow-rose-900/30 transition-all flex items-center justify-center space-x-1.5 active:scale-95">
+                        <i class="fa-solid fa-arrow-up-from-bracket"></i>
+                        <span>Desempilhar (Pop)</span>
+                    </button>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Visualizador da Estrutura de Pilha Vertical -->
+        <div class="glass-panel rounded-2xl p-6 shadow-2xl relative min-h-[380px] flex flex-col justify-between">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-slate-800 pb-3 mb-4 gap-2">
+                <div class="flex items-center space-x-2">
+                    <span class="w-3 h-3 rounded-full bg-amber-400 animate-pulse"></span>
+                    <h2 class="text-sm font-semibold uppercase tracking-wider text-slate-300">Estrutura de Pilha Sequencial (Alocação em Vetor)</h2>
+                </div>
+                <div class="flex items-center space-x-4 text-xs font-mono">
+                    <div class="bg-slate-900 px-3 py-1 rounded-lg border border-slate-800">
+                        Índice do TOPO: <span id="topIndexText" class="text-amber-400 font-bold">-1 (Vazia)</span>
+                    </div>
+                    <div class="bg-slate-900 px-3 py-1 rounded-lg border border-slate-800">
+                        Itens: <span id="stackSize" class="text-cyan-400 font-bold">0</span> / <span id="maxCapacityDisplay" class="text-slate-400 font-bold">8</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Grade Vertical da Pilha (Top para a Base) -->
+            <div class="flex justify-center items-center py-4">
+                <div id="stackContainer" class="w-full max-w-md flex flex-col-reverse gap-2 p-4 bg-slate-950/80 rounded-2xl border-2 border-slate-800/80 shadow-inner relative">
+                    <!-- Elementos da pilha serão gerados via JS (inversamente ordenados do topo [MAX] até a base [0]) -->
+                </div>
+            </div>
+
+            <!-- Legenda explicativa -->
+            <div class="flex flex-wrap items-center justify-center gap-4 pt-4 border-t border-slate-800 text-xs text-slate-400">
+                <div class="flex items-center space-x-1.5">
+                    <span class="w-3 h-3 rounded-sm bg-slate-900 border border-amber-500/80"></span>
+                    <span>Elemento no TOPO</span>
+                </div>
+                <div class="flex items-center space-x-1.5">
+                    <span class="w-3 h-3 rounded-sm bg-slate-900 border border-slate-700"></span>
+                    <span>Elemento Ocupado</span>
+                </div>
+                <div class="flex items-center space-x-1.5">
+                    <span class="w-3 h-3 rounded-sm bg-slate-950 border border-dashed border-slate-800"></span>
+                    <span>Posição Livre</span>
+                </div>
+                <div class="flex items-center space-x-1.5">
+                    <span class="w-3 h-3 rounded-sm bg-amber-950 border border-amber-500"></span>
+                    <span>Comparação / Busca</span>
+                </div>
+                <div class="flex items-center space-x-1.5">
+                    <span class="w-3 h-3 rounded-sm bg-emerald-950 border border-emerald-500"></span>
+                    <span>Sucesso / Inserido</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Painel de Explicação / Caixa de Texto Lúdica Inferior -->
+        <div class="glass-panel rounded-2xl p-5 shadow-xl border-l-4 border-l-amber-500 relative">
+            <div class="flex items-center justify-between mb-2">
+                <div class="flex items-center space-x-2">
+                    <i class="fa-solid fa-terminal text-amber-400"></i>
+                    <h3 class="text-sm font-semibold text-slate-200">Painel Explicativo das Operações</h3>
+                </div>
+                <span id="statusBadge" class="text-[10px] font-bold uppercase tracking-widest px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                    Aguardando Comandos
+                </span>
+            </div>
+
+            <!-- Caixa com texto descritivo -->
+            <div id="explanationText" class="text-sm text-slate-300 leading-relaxed font-sans bg-slate-950/70 p-4 rounded-xl border border-slate-800/80 min-h-[75px]">
+                Seja bem-vindo à simulação de <strong>Pilha Sequencial</strong>! Uma pilha segue o princípio **LIFO (Last-In, First-Out)**: o último item inserido é obrigatoriamente o primeiro a ser removido. Digite um valor acima e teste as operações.
+            </div>
+
+            <!-- Descrição detalhada dos botões requeridos -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 mt-4 pt-3 border-t border-slate-800/60 text-xs">
+                <div class="bg-slate-900/60 p-3 rounded-xl border border-slate-800">
+                    <span class="font-semibold text-rose-400 flex items-center mb-1">
+                        <i class="fa-solid fa-trash-can mr-1.5"></i> 1. Pilha Vazia
+                    </span>
+                    <span class="text-slate-400">Redefine o índice do Topo para -1 (<code>TOP = -1</code>), esvaziando toda a pilha de uma vez.</span>
+                </div>
+
+                <div class="bg-slate-900/60 p-3 rounded-xl border border-slate-800">
+                    <span class="font-semibold text-emerald-400 flex items-center mb-1">
+                        <i class="fa-solid fa-arrow-down-to-bracket mr-1.5"></i> 2. Inclusão (Push)
+                    </span>
+                    <span class="text-slate-400">Incrementa o Topo (<code>TOP++</code>) e insere o novo item no topo da estrutura de forma contígua.</span>
+                </div>
+
+                <div class="bg-slate-900/60 p-3 rounded-xl border border-slate-800">
+                    <span class="font-semibold text-rose-400 flex items-center mb-1">
+                        <i class="fa-solid fa-arrow-up-from-bracket mr-1.5"></i> 3. Exclusão (Pop)
+                    </span>
+                    <span class="text-slate-400">Remove o elemento que está no topo e decrementa o Topo (<code>TOP--</code>). Não é possível remover do meio!</span>
+                </div>
+
+                <div class="bg-slate-900/60 p-3 rounded-xl border border-slate-800">
+                    <span class="font-semibold text-amber-400 flex items-center mb-1">
+                        <i class="fa-solid fa-crosshair mr-1.5"></i> 4. Indicar Posição
+                    </span>
+                    <span class="text-slate-400">Percorre a pilha a partir do Topo até a Base comparando o valor e informa o índice exato do elemento.</span>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-slate-900 border-t border-slate-800 py-3 text-center text-xs text-slate-500">
+        Ensino de Estruturas de Dados &bull; Animação Interativa de Pilha Sequencial
+    </footer>
+
+    <!-- Script de Lógica da Pilha Sequencial -->
+    <script>
+        // Configurações da Pilha Sequencial
+        let maxCapacity = 8;
+        let stackData = new Array(12).fill(null);
+        let topIndex = -1; // -1 significa Pilha Vazia
+        let isAnimating = false;
+
+        // Base de endereços de memória simulada
+        const baseMemoryAddress = 0x2000;
+
+        function updateMaxCapacity() {
+            const input = document.getElementById('maxCapacityInput');
+            let val = parseInt(input.value);
+            if (isNaN(val) || val < 1) val = 1;
+            if (val > 12) val = 12;
+            input.value = val;
+            maxCapacity = val;
+            document.getElementById('maxCapacityDisplay').innerText = maxCapacity;
+
+            if (topIndex >= maxCapacity) {
+                topIndex = maxCapacity - 1;
+            }
+            renderStack();
+            setExplanation(`<strong>Capacidade Atualizada:</strong> O tamanho máximo da Pilha Sequencial foi ajustado para <code>${maxCapacity}</code> elementos.`, "Pronto");
+        }
+
+        window.onload = function() {
+            updateMaxCapacity();
+            // Inicializar a pilha com 3 itens para demonstração
+            stackData[0] = "10";
+            stackData[1] = "25";
+            stackData[2] = "40";
+            topIndex = 2;
+
+            renderStack();
+            setExplanation(
+                "<strong>Pilha Sequencial Inicializada:</strong> Capacidade máxima definida para <code>" + maxCapacity + "</code>. O valor <code>40</code> está no <strong>TOPO (Índice [2])</strong>.",
+                "Pronto"
+            );
+        };
+
+        // Calcula a velocidade do delay baseada no slider
+        function getDelay() {
+            const slider = document.getElementById('speedSlider');
+            return 1700 - parseInt(slider.value);
+        }
+
+        const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+        // Atualiza a caixa de texto de explicação na base
+        function setExplanation(text, status = "Processando") {
+            const expEl = document.getElementById('explanationText');
+            const badgeEl = document.getElementById('statusBadge');
+            
+            expEl.innerHTML = text;
+            badgeEl.innerText = status;
+
+            if (status === "Sucesso") {
+                badgeEl.className = "text-[10px] font-bold uppercase tracking-widest px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30";
+            } else if (status === "Erro" || status === "Não Encontrado") {
+                badgeEl.className = "text-[10px] font-bold uppercase tracking-widest px-2.5 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30";
+            } else if (status === "Buscando" || status === "Empilhando" || status === "Desempilhando") {
+                badgeEl.className = "text-[10px] font-bold uppercase tracking-widest px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 animate-pulse";
+            } else {
+                badgeEl.className = "text-[10px] font-bold uppercase tracking-widest px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30";
+            }
+        }
+
+        // Bloqueia botões durante animações
+        function toggleControls(disabled) {
+            isAnimating = disabled;
+            const buttons = document.querySelectorAll('button, input');
+            buttons.forEach(btn => {
+                if (btn.id !== 'speedSlider') {
+                    btn.disabled = disabled;
+                    if(disabled) btn.classList.add('opacity-50', 'cursor-not-allowed');
+                    else btn.classList.remove('opacity-50', 'cursor-not-allowed');
+                }
+            });
+        }
+
+        // Renderiza a estrutura da pilha no container DOM
+        function renderStack(highlightIndex = -1, highlightState = 'active') {
+            const container = document.getElementById('stackContainer');
+            document.getElementById('stackSize').innerText = topIndex + 1;
+            document.getElementById('topIndexText').innerText = topIndex >= 0 ? `[${topIndex}]` : '-1 (Vazia)';
+            
+            container.innerHTML = '';
+
+            for (let i = 0; i < maxCapacity; i++) {
+                const value = stackData[i];
+                const isEmpty = i > topIndex;
+                const isTop = i === topIndex;
+                const isHighlighted = i === highlightIndex;
+
+                const memAddr = '0x' + (baseMemoryAddress + i * 4).toString(16).toUpperCase();
+
+                let styleClass = "border-slate-700 bg-slate-900";
+                if (isEmpty) {
+                    styleClass = "border-slate-800/60 bg-slate-950/40 border-dashed text-slate-700";
+                } else if (isTop) {
+                    styleClass = "border-amber-500 bg-amber-950/40 text-amber-300 shadow-md shadow-amber-950/50";
+                }
+
+                if (isHighlighted) {
+                    if (highlightState === 'active') styleClass = "highlight-active";
+                    if (highlightState === 'found') styleClass = "highlight-found";
+                    if (highlightState === 'push') styleClass = "border-emerald-500 bg-emerald-950/80 anim-push";
+                    if (highlightState === 'pop') styleClass = "border-rose-500 bg-rose-950/80 anim-pop";
+                }
+
+                const row = document.createElement('div');
+                row.className = `w-full h-12 rounded-xl border-2 ${styleClass} stack-item flex items-center justify-between px-4 font-mono shadow-md relative`;
+                row.innerHTML = `
+                    <div class="flex items-center space-x-3">
+                        <span class="text-xs text-slate-400 font-semibold">[${i}]</span>
+                        <span class="text-[10px] text-slate-500">${memAddr}</span>
+                    </div>
+
+                    <div class="text-center font-bold text-sm sm:text-base">
+                        ${!isEmpty ? `
+                            <span class="${isTop ? 'text-amber-400' : 'text-slate-200'}">${value}</span>
+                        ` : `
+                            <span class="text-xs text-slate-700 italic">Vazio</span>
+                        `}
+                    </div>
+
+                    <div class="flex items-center space-x-2">
+                        ${isTop ? `
+                            <span class="bg-amber-500 text-slate-950 text-[10px] font-bold px-2 py-0.5 rounded-md flex items-center space-x-1 shadow">
+                                <i class="fa-solid fa-arrow-left text-[9px]"></i>
+                                <span>TOPO</span>
+                            </span>
+                        ` : `
+                            <span class="text-[10px] text-slate-600">${i <= topIndex ? 'Dado' : 'Livre'}</span>
+                        `}
+                    </div>
+                `;
+
+                container.appendChild(row);
+            }
+        }
+
+        // 1. AÇÃO: Criar Pilha Vazia
+        async function createEmptyStack() {
+            if (isAnimating) return;
+            toggleControls(true);
+
+            setExplanation(
+                "<strong>Ação: Criar Pilha Vazia</strong><br>Reiniciando o ponteiro de topo (<code>TOP = -1</code>). Todos os dados anteriores ficam inalcançáveis.",
+                "Processando"
+            );
+            await sleep(400);
+
+            stackData.fill(null);
+            topIndex = -1;
+            renderStack();
+
+            setExplanation(
+                "<strong>Pilha Vazia Criada!</strong><br>A pilha foi limpa com sucesso (<code>TOP = -1</code>). Agora está pronta para receber novos elementos via <em>Push</em>.",
+                "Sucesso"
+            );
+            toggleControls(false);
+        }
+
+        // 2. AÇÃO: Inserção de Item (Push)
+        async function pushItem() {
+            if (isAnimating) return;
+            const valInput = document.getElementById('insertValue');
+            const value = valInput.value.trim();
+
+            if (!value) {
+                setExplanation("<strong>Aviso:</strong> Por favor, digite um valor no campo acima para empilhar.", "Erro");
+                valInput.focus();
+                return;
+            }
+
+            if (topIndex >= maxCapacity - 1) {
+                setExplanation(`<strong>Erro (Tamanho Máximo Atingido):</strong> A pilha atingiu o tamanho máximo informado de <strong>${maxCapacity}</strong> elementos! O limite máximo foi atingido.`, "Erro");
+                return;
+            }
+
+            toggleControls(true);
+
+            setExplanation(
+                `<strong>Empilhando (Push):</strong> Incrementando o topo de [${topIndex}] para [${topIndex + 1}] e inserindo o valor <code>${value}</code>...`,
+                "Empilhando"
+            );
+            await sleep(getDelay() / 2);
+
+            topIndex++;
+            stackData[topIndex] = value;
+            renderStack(topIndex, 'push');
+
+            setExplanation(
+                `<strong>Sucesso!</strong> O elemento <code>${value}</code> foi empilhado com sucesso no <strong>TOPO [Índice ${topIndex}]</strong>!`,
+                "Sucesso"
+            );
+
+            valInput.value = '';
+            toggleControls(false);
+        }
+
+        // 3. AÇÃO: Exclusão de Item (Pop)
+        async function popItem() {
+            if (isAnimating) return;
+
+            if (topIndex === -1) {
+                setExplanation("<strong>Erro (Stack Underflow):</strong> A pilha está vazia! Não há nenhum elemento no topo para desempilhar.", "Erro");
+                return;
+            }
+
+            toggleControls(true);
+
+            const poppedVal = stackData[topIndex];
+            setExplanation(
+                `<strong>Desempilhando (Pop):</strong> Removendo o elemento <code>${poppedVal}</code> que está no <strong>TOPO [Índice ${topIndex}]</strong>...`,
+                "Desempilhando"
+            );
+
+            renderStack(topIndex, 'pop');
+            await sleep(getDelay());
+
+            stackData[topIndex] = null;
+            topIndex--;
+            renderStack();
+
+            setExplanation(
+                `<strong>Sucesso!</strong> Elemento <code>${poppedVal}</code> foi removido da pilha. O novo TOPO agora é o índice <strong>[${topIndex}]</strong> ${topIndex >= 0 ? `(Valor: <code>${stackData[topIndex]}</code>)` : '(Pilha Vazia)'}.`,
+                "Sucesso"
+            );
+
+            toggleControls(false);
+        }
+
+        // 4. AÇÃO: Indicar Posição (Busca na Pilha)
+        async function searchItem() {
+            if (isAnimating) return;
+            const searchInput = document.getElementById('searchValue');
+            const targetVal = searchInput.value.trim();
+
+            if (!targetVal) {
+                setExplanation("<strong>Aviso:</strong> Digite o valor que deseja buscar no campo 'VALOR PARA BUSCAR'.", "Erro");
+                searchInput.focus();
+                return;
+            }
+
+            if (topIndex === -1) {
+                setExplanation("<strong>Aviso:</strong> A pilha está vazia, não há elementos para indicar a posição.", "Erro");
+                return;
+            }
+
+            toggleControls(true);
+            setExplanation(
+                `<strong>Iniciando Busca na Pilha:</strong> Inspecionando elementos a partir do TOPO (Índice [${topIndex}]) até a Base (Índice [0])...`,
+                "Buscando"
+            );
+
+            let found = false;
+
+            // Busca do topo até a base (comportamento característico de pilha)
+            for (let i = topIndex; i >= 0; i--) {
+                renderStack(i, 'active');
+                setExplanation(
+                    `Verificando elemento no <strong>Índice [${i}]</strong> (Valor atual: <code>${stackData[i]}</code>)...`,
+                    "Buscando"
+                );
+                await sleep(getDelay());
+
+                if (stackData[i] === targetVal) {
+                    found = true;
+                    renderStack(i, 'found');
+                    const distFromTop = topIndex - i;
+                    setExplanation(
+                        `<strong>🎉 Item Localizado!</strong><br>O valor <code>${targetVal}</code> está armazenado no **ÍNDICE [${i}]** da pilha (${distFromTop === 0 ? 'Exatamente no TOPO' : `${distFromTop} posição(ões) abaixo do topo`}).`,
+                        "Sucesso"
+                    );
+                    break;
+                }
+            }
+
+            if (!found) {
+                renderStack();
+                setExplanation(
+                    `<strong>Busca Finalizada:</strong> O valor <code>${targetVal}</code> **NÃO** foi encontrado em nenhum dos ${topIndex + 1} elementos empilhados.`,
+                    "Não Encontrado"
+                );
+            }
+
+            toggleControls(false);
+        }
+    </script>
+</body>
+</html>

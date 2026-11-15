@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualizador Interativo - Lista Sequencial</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .code-font {
+            font-family: 'Fira Code', monospace;
+        }
+        
+        .array-cell {
+            transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes highlightCompare {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7); }
+            50% { transform: scale(1.08); box-shadow: 0 0 0 10px rgba(245, 158, 11, 0); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+        }
+        .highlight-active {
+            animation: highlightCompare 0.8s infinite;
+            border-color: #f59e0b !important;
+            background-color: #451a03 !important;
+        }
+
+        @keyframes successPulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); box-shadow: 0 0 20px rgba(16, 185, 129, 0.6); }
+            100% { transform: scale(1); }
+        }
+        .highlight-found {
+            animation: successPulse 0.7s ease-in-out forwards;
+            border-color: #10b981 !important;
+            background-color: #064e3b !important;
+        }
+
+        @keyframes shiftRight {
+            0% { transform: translateX(0); }
+            50% { transform: translateX(12px); color: #38bdf8; }
+            100% { transform: translateX(0); }
+        }
+        .anim-shift {
+            animation: shiftRight 0.5s ease-in-out;
+        }
+
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.75);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col justify-between overflow-x-hidden">
+
+    <!-- Header / Nav -->
+    <header class="bg-slate-900 border-b border-slate-800 p-4 shadow-xl sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+            <div class="flex items-center space-x-3">
+                <div class="bg-cyan-600 p-2.5 rounded-xl shadow-lg shadow-cyan-500/30">
+                    <i class="fa-solid fa-table-cells text-xl text-white"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold bg-gradient-to-r from-cyan-400 to-indigo-400 bg-clip-text text-transparent">
+                        Visualizador de Lista Sequencial (Vetor / Array)
+                    </h1>
+                    <p class="text-xs text-slate-400">Com capacidade máxima configurável &bull; Alocação Contígua</p>
+                </div>
+            </div>
+
+            <!-- Slider de Velocidade -->
+            <div class="flex items-center bg-slate-800/80 px-4 py-2 rounded-xl border border-slate-700/50">
+                <i class="fa-solid fa-gauge-high text-xs text-slate-400 mr-3"></i>
+                <span class="text-xs text-slate-300 font-medium mr-3">Velocidade:</span>
+                <input type="range" id="speedSlider" min="200" max="1500" value="700" step="100" class="w-24 accent-cyan-500 cursor-pointer">
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="max-w-7xl mx-auto w-full p-4 md:p-6 flex-1 flex flex-col gap-6">
+
+        <!-- Painel de Controles Principal -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+
+            <!-- Card 1: Criar Lista Vazia & Capacidade -->
+            <div class="lg:col-span-3 glass-panel p-4 rounded-2xl flex flex-col justify-between shadow-xl">
+                <div>
+                    <div class="flex items-center text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
+                        <i class="fa-solid fa-rotate-right mr-2 text-cyan-400"></i> Inicialização
+                    </div>
+                    <p class="text-xs text-slate-400 mb-2">Zera a contagem e limpa as posições do vetor.</p>
+                    <div class="mb-3">
+                        <label class="block text-[11px] font-semibold text-slate-400 mb-1">TAMANHO MÁXIMO</label>
+                        <input type="number" id="maxCapacityInput" value="8" min="1" max="12" onchange="updateMaxCapacity()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1 text-slate-100 focus:outline-none focus:border-cyan-500 code-font text-sm">
+                    </div>
+                </div>
+                <button id="btnCreateEmpty" onclick="createEmptyList()" class="w-full py-2.5 px-4 bg-rose-600/20 hover:bg-rose-600/30 text-rose-300 border border-rose-500/40 rounded-xl font-semibold text-sm transition-all flex items-center justify-center space-x-2 group active:scale-95">
+                    <i class="fa-solid fa-trash-can group-hover:rotate-12 transition-transform"></i>
+                    <span>Criar Lista Vazia</span>
+                </button>
+            </div>
+
+            <!-- Card 2: Inserção de Itens -->
+            <div class="lg:col-span-5 glass-panel p-4 rounded-2xl shadow-xl flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
+                        <i class="fa-solid fa-plus-circle mr-2 text-emerald-400"></i> Inserir Elemento
+                    </div>
+                    <div class="grid grid-cols-2 gap-3 mb-2">
+                        <div>
+                            <label class="block text-[11px] font-semibold text-slate-400 mb-1">VALOR</label>
+                            <input type="text" id="insertValue" placeholder="Ex: 50" maxlength="4" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-slate-100 placeholder-slate-600 focus:outline-none focus:border-cyan-500 code-font text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-semibold text-slate-400 mb-1">POSIÇÃO / ÍNDICE</label>
+                            <input type="number" id="insertIndex" placeholder="Opcional (Ex: 0)" min="0" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-slate-100 placeholder-slate-600 focus:outline-none focus:border-cyan-500 code-font text-sm">
+                        </div>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-2 mt-2">
+                    <button id="btnInsertEnd" onclick="insertItem('end')" class="py-2 px-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-semibold text-xs shadow-lg shadow-emerald-900/30 transition-all flex items-center justify-center space-x-1.5 active:scale-95">
+                        <i class="fa-solid fa-file-circle-plus"></i>
+                        <span>Inserir no Fim</span>
+                    </button>
+                    <button id="btnInsertIndex" onclick="insertItem('index')" class="py-2 px-3 bg-emerald-800/60 hover:bg-emerald-700/70 text-emerald-200 border border-emerald-500/40 rounded-xl font-semibold text-xs transition-all flex items-center justify-center space-x-1.5 active:scale-95">
+                        <i class="fa-solid fa-arrows-split-up-and-left"></i>
+                        <span>Inserir no Índice</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Card 3: Exclusão e Indicação de Posição -->
+            <div class="lg:col-span-4 glass-panel p-4 rounded-2xl shadow-xl flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
+                        <i class="fa-solid fa-magnifying-glass mr-2 text-amber-400"></i> Buscar & Excluir
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-400 mb-1">VALOR ESPECÍFICO</label>
+                        <input type="text" id="searchValue" placeholder="Valor para buscar ou remover" maxlength="4" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-slate-100 placeholder-slate-600 focus:outline-none focus:border-amber-500 code-font text-sm mb-3">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <button id="btnSearch" onclick="searchItem()" class="py-2 px-3 bg-amber-600 hover:bg-amber-500 text-white rounded-xl font-semibold text-xs shadow-lg shadow-amber-900/30 transition-all flex items-center justify-center space-x-1.5 active:scale-95">
+                        <i class="fa-solid fa-crosshair"></i>
+                        <span>Indicar Posição</span>
+                    </button>
+                    <button id="btnDelete" onclick="deleteItem()" class="py-2 px-3 bg-rose-600 hover:bg-rose-500 text-white rounded-xl font-semibold text-xs shadow-lg shadow-rose-900/30 transition-all flex items-center justify-center space-x-1.5 active:scale-95">
+                        <i class="fa-solid fa-trash"></i>
+                        <span>Excluir Item</span>
+                    </button>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Visualizador do Vetor Sequencial -->
+        <div class="glass-panel rounded-2xl p-6 shadow-2xl relative min-h-[320px] flex flex-col justify-between">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-slate-800 pb-3 mb-4 gap-2">
+                <div class="flex items-center space-x-2">
+                    <span class="w-3 h-3 rounded-full bg-cyan-400 animate-pulse"></span>
+                    <h2 class="text-sm font-semibold uppercase tracking-wider text-slate-300">Estrutura Sequencial (Array em Memória Contígua)</h2>
+                </div>
+                <div class="flex items-center space-x-4 text-xs font-mono">
+                    <div class="bg-slate-900 px-3 py-1 rounded-lg border border-slate-800">
+                        Ocupação: <span id="listSize" class="text-cyan-400 font-bold">0</span> / <span id="maxCapacityDisplay" class="text-slate-400 font-bold">8</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Grade Visual das Células da Lista Sequencial -->
+            <div id="arrayContainer" class="py-6 flex items-center justify-center overflow-x-auto gap-2 sm:gap-3 px-2">
+                <!-- Células geradas via JS -->
+            </div>
+
+            <!-- Legenda explicativa -->
+            <div class="flex flex-wrap items-center justify-center gap-4 pt-4 border-t border-slate-800 text-xs text-slate-400">
+                <div class="flex items-center space-x-1.5">
+                    <span class="w-3 h-3 rounded-sm bg-slate-900 border border-slate-700"></span>
+                    <span>Célula Ocupada</span>
+                </div>
+                <div class="flex items-center space-x-1.5">
+                    <span class="w-3 h-3 rounded-sm bg-slate-950 border border-dashed border-slate-800"></span>
+                    <span>Espaço Livre</span>
+                </div>
+                <div class="flex items-center space-x-1.5">
+                    <span class="w-3 h-3 rounded-sm bg-amber-950 border border-amber-500"></span>
+                    <span>Comparação / Busca</span>
+                </div>
+                <div class="flex items-center space-x-1.5">
+                    <span class="w-3 h-3 rounded-sm bg-emerald-950 border border-emerald-500"></span>
+                    <span>Sucesso / Inserido</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Painel de Explicação / Caixa de Texto Lúdica Inferior -->
+        <div class="glass-panel rounded-2xl p-5 shadow-xl border-l-4 border-l-cyan-500 relative">
+            <div class="flex items-center justify-between mb-2">
+                <div class="flex items-center space-x-2">
+                    <i class="fa-solid fa-terminal text-cyan-400"></i>
+                    <h3 class="text-sm font-semibold text-slate-200">Painel Explicativo das Operações</h3>
+                </div>
+                <span id="statusBadge" class="text-[10px] font-bold uppercase tracking-widest px-2.5 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+                    Aguardando Comandos
+                </span>
+            </div>
+
+            <!-- Caixa com texto descritivo -->
+            <div id="explanationText" class="text-sm text-slate-300 leading-relaxed font-sans bg-slate-950/70 p-4 rounded-xl border border-slate-800/80 min-h-[75px]">
+                Seja bem-vindo à simulação de <strong>Lista Sequencial</strong> com limite máximo configurável! Caso tente inserir mais itens que o tamanho máximo informado, o sistema informará que o limite foi atingido.
+            </div>
+
+            <!-- Descrição detalhada dos botões -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 mt-4 pt-3 border-t border-slate-800/60 text-xs">
+                <div class="bg-slate-900/60 p-3 rounded-xl border border-slate-800">
+                    <span class="font-semibold text-rose-400 flex items-center mb-1">
+                        <i class="fa-solid fa-trash-can mr-1.5"></i> 1. Lista Vazia
+                    </span>
+                    <span class="text-slate-400">Redefine a quantidade de itens para 0, liberando todas as posições do vetor sequencial.</span>
+                </div>
+
+                <div class="bg-slate-900/60 p-3 rounded-xl border border-slate-800">
+                    <span class="font-semibold text-emerald-400 flex items-center mb-1">
+                        <i class="fa-solid fa-plus-circle mr-1.5"></i> 2. Inclusão de Item
+                    </span>
+                    <span class="text-slate-400">Insere o item. Se ultrapassar o tamanho máximo, avisa que o limite da lista foi atingido.</span>
+                </div>
+
+                <div class="bg-slate-900/60 p-3 rounded-xl border border-slate-800">
+                    <span class="font-semibold text-rose-400 flex items-center mb-1">
+                        <i class="fa-solid fa-trash mr-1.5"></i> 3. Exclusão de Item
+                    </span>
+                    <span class="text-slate-400">Remove o elemento desejado e reorganiza o vetor deslocando os itens à esquerda.</span>
+                </div>
+
+                <div class="bg-slate-900/60 p-3 rounded-xl border border-slate-800">
+                    <span class="font-semibold text-amber-400 flex items-center mb-1">
+                        <i class="fa-solid fa-crosshair mr-1.5"></i> 4. Indicar Posição
+                    </span>
+                    <span class="text-slate-400">Realiza uma busca sequencial $O(n)$ comparando elemento a elemento até informar o índice correto.</span>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-slate-900 border-t border-slate-800 py-3 text-center text-xs text-slate-500">
+        Ensino de Estruturas de Dados &bull; Animação Interativa de Lista Sequencial
+    </footer>
+
+    <!-- Script -->
+    <script>
+        let maxCapacity = 8;
+        let arrayData = new Array(12).fill(null);
+        let currentSize = 0;
+        let isAnimating = false;
+        const baseMemoryAddress = 0x1000;
+
+        function updateMaxCapacity() {
+            const input = document.getElementById('maxCapacityInput');
+            let val = parseInt(input.value);
+            if (isNaN(val) || val < 1) val = 1;
+            if (val > 12) val = 12;
+            input.value = val;
+            maxCapacity = val;
+            document.getElementById('maxCapacityDisplay').innerText = maxCapacity;
+
+            // Se o tamanho atual ultrapassar o novo limite, ajusta
+            if (currentSize > maxCapacity) {
+                currentSize = maxCapacity;
+            }
+            renderArray();
+            setExplanation(`<strong>Capacidade Atualizada:</strong> O tamanho máximo da Lista Sequencial foi ajustado para <code>${maxCapacity}</code> elementos.`, "Pronto");
+        }
+
+        window.onload = function() {
+            updateMaxCapacity();
+            arrayData[0] = "15";
+            arrayData[1] = "30";
+            arrayData[2] = "45";
+            currentSize = 3;
+
+            renderArray();
+            setExplanation(
+                "<strong>Lista Sequencial Inicializada:</strong> Capacidade máxima definida para <code>" + maxCapacity + "</code>. Há 3 itens alocados.",
+                "Pronto"
+            );
+        };
+
+        function getDelay() {
+            const slider = document.getElementById('speedSlider');
+            return 1700 - parseInt(slider.value);
+        }
+
+        const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+        function setExplanation(text, status = "Processando") {
+            const expEl = document.getElementById('explanationText');
+            const badgeEl = document.getElementById('statusBadge');
+            
+            expEl.innerHTML = text;
+            badgeEl.innerText = status;
+
+            if (status === "Sucesso") {
+                badgeEl.className = "text-[10px] font-bold uppercase tracking-widest px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30";
+            } else if (status === "Erro" || status === "Não Encontrado") {
+                badgeEl.className = "text-[10px] font-bold uppercase tracking-widest px-2.5 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30";
+            } else if (status === "Buscando" || status === "Deslocando") {
+                badgeEl.className = "text-[10px] font-bold uppercase tracking-widest px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 animate-pulse";
+            } else {
+                badgeEl.className = "text-[10px] font-bold uppercase tracking-widest px-2.5 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30";
+            }
+        }
+
+        function toggleControls(disabled) {
+            isAnimating = disabled;
+            const buttons = document.querySelectorAll('button, input');
+            buttons.forEach(btn => {
+                if (btn.id !== 'speedSlider') {
+                    btn.disabled = disabled;
+                    if(disabled) btn.classList.add('opacity-50', 'cursor-not-allowed');
+                    else btn.classList.remove('opacity-50', 'cursor-not-allowed');
+                }
+            });
+        }
+
+        function renderArray(highlightIndex = -1, highlightState = 'active') {
+            const container = document.getElementById('arrayContainer');
+            document.getElementById('listSize').innerText = currentSize;
+            container.innerHTML = '';
+
+            for (let i = 0; i < maxCapacity; i++) {
+                const value = arrayData[i];
+                const isEmpty = value === null || i >= currentSize;
+                const isHighlighted = i === highlightIndex;
+                const memAddr = '0x' + (baseMemoryAddress + i * 4).toString(16).toUpperCase();
+
+                let styleClass = "border-slate-700 bg-slate-900";
+                if (isEmpty) {
+                    styleClass = "border-slate-800/80 bg-slate-950/40 border-dashed text-slate-600";
+                }
+
+                if (isHighlighted) {
+                    if (highlightState === 'active') styleClass = "highlight-active";
+                    if (highlightState === 'found') styleClass = "highlight-found";
+                    if (highlightState === 'shift') styleClass = "border-sky-500 bg-sky-950/80 anim-shift";
+                }
+
+                const cell = document.createElement('div');
+                cell.className = "flex flex-col items-center flex-shrink-0";
+                cell.innerHTML = `
+                    <div class="mb-1 text-[11px] font-mono text-slate-400 font-semibold">[${i}]</div>
+                    <div class="w-16 h-20 sm:w-20 sm:h-24 rounded-xl border-2 ${styleClass} array-cell flex flex-col justify-between p-2 shadow-lg relative">
+                        <span class="text-[9px] code-font text-slate-500 text-center block leading-tight">${memAddr}</span>
+                        <div class="text-center my-auto">
+                            ${!isEmpty ? `<span class="text-base sm:text-lg font-bold code-font text-cyan-300 block">${value}</span>` : `<span class="text-xs text-slate-700 font-mono italic">Vazio</span>`}
+                        </div>
+                        <div class="text-[8px] font-bold uppercase text-center text-slate-500">${i < currentSize ? '<span class="text-cyan-400">Dados</span>' : 'Livre'}</div>
+                    </div>
+                `;
+                container.appendChild(cell);
+            }
+        }
+
+        async function createEmptyList() {
+            if (isAnimating) return;
+            toggleControls(true);
+
+            setExplanation("<strong>Ação: Criar Lista Vazia</strong><br>Reiniciando contagem (<code>quantidade = 0</code>).", "Processando");
+            await sleep(400);
+
+            arrayData.fill(null);
+            currentSize = 0;
+            renderArray();
+
+            setExplanation("<strong>Lista Vazia Criada!</strong><br>A lista sequencial possui agora 0 itens ocupados.", "Sucesso");
+            toggleControls(false);
+        }
+
+        async function insertItem(mode) {
+            if (isAnimating) return;
+            const valInput = document.getElementById('insertValue');
+            const value = valInput.value.trim();
+
+            if (!value) {
+                setExplanation("<strong>Aviso:</strong> Por favor, digite um valor para inserir.", "Erro");
+                valInput.focus();
+                return;
+            }
+
+            // Validação de Tamanho Máximo
+            if (currentSize >= maxCapacity) {
+                setExplanation(`<strong>Erro (Tamanho Máximo Atingido):</strong> A lista atingiu o tamanho máximo permitido de <strong>${maxCapacity}</strong> elementos! Não é possível inserir mais itens.`, "Erro");
+                return;
+            }
+
+            toggleControls(true);
+
+            let targetIdx = currentSize;
+            if (mode === 'index') {
+                const idxInput = document.getElementById('insertIndex');
+                let parsedIdx = parseInt(idxInput.value);
+                if (!isNaN(parsedIdx)) {
+                    if (parsedIdx < 0) parsedIdx = 0;
+                    if (parsedIdx > currentSize) parsedIdx = currentSize;
+                    targetIdx = parsedIdx;
+                }
+            }
+
+            if (targetIdx < currentSize) {
+                setExplanation(`<strong>Deslocamento (Shift):</strong> Abrindo espaço na posição [${targetIdx}]...`, "Deslocando");
+                for (let i = currentSize; i > targetIdx; i--) {
+                    arrayData[i] = arrayData[i - 1];
+                    renderArray(i, 'shift');
+                    await sleep(getDelay());
+                }
+            }
+
+            arrayData[targetIdx] = value;
+            currentSize++;
+            renderArray(targetIdx, 'found');
+
+            setExplanation(`<strong>Sucesso!</strong> Valor <code>${value}</code> inserido na posição <strong>[${targetIdx}]</strong>.`, "Sucesso");
+            valInput.value = '';
+            document.getElementById('insertIndex').value = '';
+            toggleControls(false);
+        }
+
+        async function deleteItem() {
+            if (isAnimating) return;
+            const searchInput = document.getElementById('searchValue');
+            const targetVal = searchInput.value.trim();
+
+            if (!targetVal) {
+                setExplanation("<strong>Aviso:</strong> Informe o valor a ser removido.", "Erro");
+                searchInput.focus();
+                return;
+            }
+
+            if (currentSize === 0) {
+                setExplanation("<strong>Erro:</strong> A lista está vazia!", "Erro");
+                return;
+            }
+
+            toggleControls(true);
+            let targetIndex = -1;
+            for (let i = 0; i < currentSize; i++) {
+                renderArray(i, 'active');
+                await sleep(getDelay());
+                if (arrayData[i] === targetVal) {
+                    targetIndex = i;
+                    break;
+                }
+            }
+
+            if (targetIndex !== -1) {
+                setExplanation(`<strong>Item encontrado no Índice [${targetIndex}]!</strong> Reorganizando o vetor...`, "Deslocando");
+                await sleep(getDelay());
+
+                for (let i = targetIndex; i < currentSize - 1; i++) {
+                    arrayData[i] = arrayData[i + 1];
+                    renderArray(i, 'shift');
+                    await sleep(getDelay());
+                }
+
+                arrayData[currentSize - 1] = null;
+                currentSize--;
+                renderArray();
+
+                setExplanation(`<strong>Sucesso!</strong> O elemento <code>${targetVal}</code> foi removido.`, "Sucesso");
+                searchInput.value = '';
+            } else {
+                renderArray();
+                setExplanation(`<strong>Não Encontrado:</strong> O valor <code>${targetVal}</code> não existe na lista.`, "Não Encontrado");
+            }
+
+            toggleControls(false);
+        }
+
+        async function searchItem() {
+            if (isAnimating) return;
+            const searchInput = document.getElementById('searchValue');
+            const targetVal = searchInput.value.trim();
+
+            if (!targetVal) {
+                setExplanation("<strong>Aviso:</strong> Digite o valor que deseja buscar.", "Erro");
+                searchInput.focus();
+                return;
+            }
+
+            if (currentSize === 0) {
+                setExplanation("<strong>Aviso:</strong> A lista está vazia.", "Erro");
+                return;
+            }
+
+            toggleControls(true);
+            let found = false;
+
+            for (let i = 0; i < currentSize; i++) {
+                renderArray(i, 'active');
+                setExplanation(`Comparando com o elemento do <strong>Índice [${i}]</strong>...`, "Buscando");
+                await sleep(getDelay());
+
+                if (arrayData[i] === targetVal) {
+                    found = true;
+                    renderArray(i, 'found');
+                    setExplanation(`<strong>🎉 Posição Localizada!</strong> O item <code>${targetVal}</code> está no **ÍNDICE [${i}]**.`, "Sucesso");
+                    break;
+                }
+            }
+
+            if (!found) {
+                renderArray();
+                setExplanation(`<strong>Busca Finalizada:</strong> O valor <code>${targetVal}</code> não foi encontrado.`, "Não Encontrado");
+            }
+
+            toggleControls(false);
+        }
+    </script>
+</body>
+</html>

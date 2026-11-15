@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tutorial Interativo de Estruturas de Dados</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;700&family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        code, pre { font-family: 'Fira Code', monospace; }
+        html { scroll-behavior: smooth; }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 flex flex-col min-h-screen">
+
+    <!-- Header / Navbar -->
+    <header class="bg-slate-900 border-b border-slate-800 sticky top-0 z-50 backdrop-blur-md bg-opacity-90">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="bg-indigo-600 p-2 rounded-lg text-white shadow-lg shadow-indigo-500/30">
+                    <i class="fa-solid fa-graduation-cap text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg text-white">Guia de Estruturas de Dados</h1>
+                    <p class="text-xs text-indigo-400">Material Didático: Pseudo-códigos e Algoritmos</p>
+                </div>
+            </div>
+            <a href="#sumario" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg border border-slate-700 transition">
+                <i class="fa-solid fa-list-ul mr-1"></i> Ir ao Sumário
+            </a>
+        </div>
+    </header>
+
+    <div class="max-w-7xl mx-auto px-4 py-8 flex-1 grid grid-cols-1 lg:grid-cols-12 gap-8">
+        
+        <!-- Sidebar Navigation / Sumário Fixado -->
+        <aside class="lg:col-span-3">
+            <div id="sumario" class="bg-slate-900 border border-slate-800 rounded-2xl p-5 sticky top-20 shadow-xl">
+                <h2 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-4 flex items-center">
+                    <i class="fa-solid fa-book-bookmark text-indigo-400 mr-2"></i> Conteúdo da Aula
+                </h2>
+                <nav class="space-y-4 text-sm">
+                    <!-- 1. Lista Sequencial -->
+                    <div>
+                        <a href="#lista-sequencial" class="font-semibold text-indigo-300 hover:text-indigo-200 block mb-1">1. Lista Sequencial</a>
+                        <ul class="pl-3 border-l-2 border-slate-800 space-y-1 text-xs text-slate-400">
+                            <li><a href="#ls-criacao" class="hover:text-slate-200">1.1 Criação</a></li>
+                            <li><a href="#ls-busca" class="hover:text-slate-200">1.2 Buscar Elementos</a></li>
+                            <li><a href="#ls-insercao" class="hover:text-slate-200">1.3 Inserir Elementos</a></li>
+                            <li><a href="#ls-remocao" class="hover:text-slate-200">1.4 Remover Elementos</a></li>
+                        </ul>
+                    </div>
+                    <!-- 2. Lista Encadeada -->
+                    <div>
+                        <a href="#lista-encadeada" class="font-semibold text-emerald-300 hover:text-emerald-200 block mb-1">2. Lista Encadeada</a>
+                        <ul class="pl-3 border-l-2 border-slate-800 space-y-1 text-xs text-slate-400">
+                            <li><a href="#le-criacao" class="hover:text-slate-200">2.1 Criação</a></li>
+                            <li><a href="#le-busca" class="hover:text-slate-200">2.2 Buscar Elementos</a></li>
+                            <li><a href="#le-insercao" class="hover:text-slate-200">2.3 Inserir Elementos</a></li>
+                            <li><a href="#le-remocao" class="hover:text-slate-200">2.4 Remover Elementos</a></li>
+                        </ul>
+                    </div>
+                    <!-- 3. Pilha Sequencial -->
+                    <div>
+                        <a href="#pilha-sequencial" class="font-semibold text-amber-300 hover:text-amber-200 block mb-1">3. Pilha Sequencial</a>
+                        <ul class="pl-3 border-l-2 border-slate-800 space-y-1 text-xs text-slate-400">
+                            <li><a href="#ps-criacao" class="hover:text-slate-200">3.1 Criação</a></li>
+                            <li><a href="#ps-busca" class="hover:text-slate-200">3.2 Buscar (Topo/Peek)</a></li>
+                            <li><a href="#ps-insercao" class="hover:text-slate-200">3.3 Inserir (Push)</a></li>
+                            <li><a href="#ps-remocao" class="hover:text-slate-200">3.4 Remover (Pop)</a></li>
+                        </ul>
+                    </div>
+                    <!-- 4. Pilha Encadeada -->
+                    <div>
+                        <a href="#pilha-encadeada" class="font-semibold text-rose-300 hover:text-rose-200 block mb-1">4. Pilha Encadeada</a>
+                        <ul class="pl-3 border-l-2 border-slate-800 space-y-1 text-xs text-slate-400">
+                            <li><a href="#pe-criacao" class="hover:text-slate-200">4.1 Criação</a></li>
+                            <li><a href="#pe-busca" class="hover:text-slate-200">4.2 Buscar (Topo/Peek)</a></li>
+                            <li><a href="#pe-insercao" class="hover:text-slate-200">4.3 Inserir (Push)</a></li>
+                            <li><a href="#pe-remocao" class="hover:text-slate-200">4.4 Remover (Pop)</a></li>
+                        </ul>
+                    </div>
+                </nav>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="lg:col-span-9 space-y-12">
+            
+            <!-- Intro Banner -->
+            <section class="bg-gradient-to-r from-indigo-900/40 via-slate-900 to-slate-900 border border-indigo-500/30 rounded-2xl p-6 shadow-xl">
+                <h2 class="text-2xl font-bold text-white mb-2">Tutorial Teórico & Prático de Pseudo-código</h2>
+                <p class="text-sm text-slate-300 leading-relaxed">
+                    Este guia foi desenvolvido para apoiar disciplinas de Estrutura de Dados. Aqui você encontrará os pseudo-códigos detalhados das quatro estruturas lineares fundamentais da ciência da computação.
+                </p>
+            </section>
+
+            <!-- SEÇÃO 1: LISTA SEQUENCIAL -->
+            <section id="lista-sequencial" class="bg-slate-900/70 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-6">
+                <div class="border-b border-slate-800 pb-4">
+                    <span class="text-xs font-bold uppercase tracking-wider text-indigo-400 bg-indigo-500/10 px-2.5 py-1 rounded-md border border-indigo-500/20">Seção 1</span>
+                    <h2 class="text-2xl font-bold text-slate-100 mt-2">1. Lista Sequencial (Vetor Estático/Dinâmico)</h2>
+                    <p class="text-xs text-slate-400 mt-1">Estrutura que armazena elementos em posições de memória contíguas. O acesso direto é $O(1)$, mas a inserção/remoção pode exigir deslocamento $O(n)$.</p>
+                </div>
+
+                <!-- 1.1 Criação -->
+                <div id="ls-criacao" class="space-y-2">
+                    <h3 class="text-base font-semibold text-indigo-300 flex items-center">
+                        <i class="fa-solid fa-code text-xs mr-2"></i>1.1 Criação da Lista Sequencial
+                    </h3>
+                    <div class="bg-slate-950 rounded-xl p-4 border border-slate-800 font-mono text-xs text-emerald-400 overflow-x-auto">
+<pre>
+ESTRUTURA ListaSequencial:
+    Vetor dados[CAPACIDADE_MAX]
+    Inteiro quantidade
+
+FUNÇÃO criarLista():
+    ListaSequencial L
+    L.quantidade = 0
+    RETORNAR L
+FIM_FUNÇÃO
+</pre>
+                    </div>
+                </div>
+
+                <!-- 1.2 Buscar Elementos -->
+                <div id="ls-busca" class="space-y-2">
+                    <h3 class="text-base font-semibold text-indigo-300 flex items-center">
+                        <i class="fa-solid fa-magnifying-glass text-xs mr-2"></i>1.2 Buscar Elementos
+                    </h3>
+                    <div class="bg-slate-950 rounded-xl p-4 border border-slate-800 font-mono text-xs text-emerald-400 overflow-x-auto">
+<pre>
+FUNÇÃO buscar(L, valor):
+    PARA i DE 0 ATÉ (L.quantidade - 1) FAÇA:
+        SE L.dados[i] == valor ENTÃO:
+            RETORNAR i  // Retorna o índice onde foi encontrado
+        FIM_SE
+    FIM_PARA
+    RETORNAR -1 // Não encontrado
+FIM_FUNÇÃO
+</pre>
+                    </div>
+                </div>
+
+                <!-- 1.3 Inserir Elementos -->
+                <div id="ls-insercao" class="space-y-2">
+                    <h3 class="text-base font-semibold text-indigo-300 flex items-center">
+                        <i class="fa-solid fa-plus text-xs mr-2"></i>1.3 Inserir Elementos numa Posição
+                    </h3>
+                    <div class="bg-slate-950 rounded-xl p-4 border border-slate-800 font-mono text-xs text-emerald-400 overflow-x-auto">
+<pre>
+FUNÇÃO inserir(L, valor, posicao):
+    SE L.quantidade == CAPACIDADE_MAX ENTÃO:
+        EXIBIR "Erro: Lista Cheia (Overflow)"
+        RETORNAR FALSO
+    FIM_SE
+
+    SE posicao < 0 OU posicao > L.quantidade ENTÃO:
+        EXIBIR "Erro: Posição Inválida"
+        RETORNAR FALSO
+    FIM_SE
+
+    // Deslocar elementos para a direita para abrir espaço
+    PARA i DE L.quantidade PASSO -1 ATÉ (posicao + 1) FAÇA:
+        L.dados[i] = L.dados[i - 1]
+    FIM_PARA
+
+    L.dados[posicao] = valor
+    L.quantidade = L.quantidade + 1
+    RETORNAR VERDADEIRO
+FIM_FUNÇÃO
+</pre>
+                    </div>
+                </div>
+
+                <!-- 1.4 Remover Elementos -->
+                <div id="ls-remocao" class="space-y-2">
+                    <h3 class="text-base font-semibold text-indigo-300 flex items-center">
+                        <i class="fa-solid fa-trash text-xs mr-2"></i>1.4 Remover Elementos de uma Posição
+                    </h3>
+                    <div class="bg-slate-950 rounded-xl p-4 border border-slate-800 font-mono text-xs text-emerald-400 overflow-x-auto">
+<pre>
+FUNÇÃO remover(L, posicao):
+    SE L.quantidade == 0 ENTÃO:
+        EXIBIR "Erro: Lista Vazia (Underflow)"
+        RETORNAR FALSO
+    FIM_SE
+
+    SE posicao < 0 OU posicao >= L.quantidade ENTÃO:
+        EXIBIR "Erro: Posição Inválida"
+        RETORNAR FALSO
+    FIM_SE
+
+    // Deslocar elementos para a esquerda cobrindo a lacuna
+    PARA i DE posicao ATÉ (L.quantidade - 2) FAÇA:
+        L.dados[i] = L.dados[i + 1]
+    FIM_PARA
+
+    L.quantidade = L.quantidade - 1
+    RETORNAR VERDADEIRO
+FIM_FUNÇÃO
+</pre>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SEÇÃO 2: LISTA ENCADEADA -->
+            <section id="lista-encadeada" class="bg-slate-900/70 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-6">
+                <div class="border-b border-slate-800 pb-4">
+                    <span class="text-xs font-bold uppercase tracking-wider text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-md border border-emerald-500/20">Seção 2</span>
+                    <h2 class="text-2xl font-bold text-slate-100 mt-2">2. Lista Encadeada (Linked List)</h2>
+                    <p class="text-xs text-slate-400 mt-1">Coleção de nós alocados dinamicamente. Cada nó armazena o dado e um ponteiro para o próximo nó.</p>
+                </div>
+
+                <!-- 2.1 Criação -->
+                <div id="le-criacao" class="space-y-2">
+                    <h3 class="text-base font-semibold text-emerald-300 flex items-center">
+                        <i class="fa-solid fa-code text-xs mr-2"></i>2.1 Criação da Estrutura e Nó
+                    </h3>
+                    <div class="bg-slate-950 rounded-xl p-4 border border-slate-800 font-mono text-xs text-emerald-400 overflow-x-auto">
+<pre>
+ESTRUTURA No:
+    Dado valor
+    Ponteiro proximo
+
+ESTRUTURA ListaEncadeada:
+    Ponteiro head // Cabeça da lista
+
+FUNÇÃO criarListaEncadeada():
+    ListaEncadeada L
+    L.head = NULO
+    RETORNAR L
+FIM_FUNÇÃO
+</pre>
+                    </div>
+                </div>
+
+                <!-- 2.2 Buscar Elementos -->
+                <div id="le-busca" class="space-y-2">
+                    <h3 class="text-base font-semibold text-emerald-300 flex items-center">
+                        <i class="fa-solid fa-magnifying-glass text-xs mr-2"></i>2.2 Buscar Elemento por Valor
+                    </h3>
+                    <div class="bg-slate-950 rounded-xl p-4 border border-slate-800 font-mono text-xs text-emerald-400 overflow-x-auto">
+<pre>
+FUNÇÃO buscar(L, valorAlvo):
+    Ponteiro atual = L.head
+    Inteiro indice = 0
+
+    ENQUANTO atual != NULO FAÇA:
+        SE atual.valor == valorAlvo ENTÃO:
+            RETORNAR indice // Retorna a posição do elemento
+        FIM_SE
+        atual = atual.proximo
+        indice = indice + 1
+    FIM_ENQUANTO
+
+    RETORNAR -1 // Não encontrado
+FIM_FUNÇÃO
+</pre>
+                    </div>
+                </div>
+
+                <!-- 2.3 Inserir Elementos -->
+                <div id="le-insercao" class="space-y-2">
+                    <h3 class="text-base font-semibold text-emerald-300 flex items-center">
+                        <i class="fa-solid fa-plus text-xs mr-2"></i>2.3 Inserir Elemento no Início
+                    </h3>
+                    <div class="bg-slate-950 rounded-xl p-4 border border-slate-800 font-mono text-xs text-emerald-400 overflow-x-auto">
+<pre>
+FUNÇÃO inserirNoInicio(L, novoValor):
+    Ponteiro novoNo = ALOCAR_MEMORIA(No)
+    novoNo.valor = novoValor
+    
+    // O novo nó aponta para onde a cabeça atual apontava
+    novoNo.proximo = L.head
+    
+    // A cabeça da lista passa a ser o novo nó
+    L.head = novoNo
+    RETORNAR VERDADEIRO
+FIM_FUNÇÃO
+</pre>
+                    </div>
+                </div>
+
+                <!-- 2.4 Remover Elementos -->
+                <div id="le-remocao" class="space-y-2">
+                    <h3 class="text-base font-semibold text-emerald-300 flex items-center">
+                        <i class="fa-solid fa-trash text-xs mr-2"></i>2.4 Remover Elemento por Valor
+                    </h3>
+                    <div class="bg-slate-950 rounded-xl p-4 border border-slate-800 font-mono text-xs text-emerald-400 overflow-x-auto">
+<pre>
+FUNÇÃO removerValor(L, valorAlvo):
+    SE L.head == NULO ENTÃO:
+        EXIBIR "Lista Vazia"
+        RETORNAR FALSO
+    FIM_SE
+
+    Ponteiro atual = L.head
+    Ponteiro anterior = NULO
+
+    // Caso o elemento a ser removido seja o primeiro
+    SE atual.valor == valorAlvo ENTÃO:
+        L.head = atual.proximo
+        LIBERAR_MEMORIA(atual)
+        RETORNAR VERDADEIRO
+    FIM_SE
+
+    // Busca pelo nó no restante da lista
+    ENQUANTO atual != NULO E atual.valor != valorAlvo FAÇA:
+        anterior = atual
+        atual = atual.proximo
+    FIM_ENQUANTO
+
+    SE atual == NULO ENTÃO:
+        EXIBIR "Valor não encontrado"
+        RETORNAR FALSO
+    FIM_SE
+
+    // Bypass: Conecta o anterior ao próximo do atual
+    anterior.proximo = atual.proximo
+    LIBERAR_MEMORIA(atual)
+    RETORNAR VERDADEIRO
+FIM_FUNÇÃO
+</pre>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SEÇÃO 3: PILHA SEQUENCIAL -->
+            <section id="pilha-sequencial" class="bg-slate-900/70 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-6">
+                <div class="border-b border-slate-800 pb-4">
+                    <span class="text-xs font-bold uppercase tracking-wider text-amber-400 bg-amber-500/10 px-2.5 py-1 rounded-md border border-amber-500/20">Seção 3</span>
+                    <h2 class="text-2xl font-bold text-slate-100 mt-2">3. Pilha Sequencial (Array Stack - LIFO)</h2>
+                    <p class="text-xs text-slate-400 mt-1">Estrutura que segue a regra LIFO (Last-In, First-Out). O último item a entrar é o primeiro a sair.</p>
+                </div>
+
+                <!-- 3.1 Criação -->
+                <div id="ps-criacao" class="space-y-2">
+                    <h3 class="text-base font-semibold text-amber-300 flex items-center">
+                        <i class="fa-solid fa-code text-xs mr-2"></i>3.1 Criação da Pilha Sequencial
+                    </h3>
+                    <div class="bg-slate-950 rounded-xl p-4 border border-slate-800 font-mono text-xs text-emerald-400 overflow-x-auto">
+<pre>
+ESTRUTURA PilhaSequencial:
+    Vetor dados[CAPACIDADE_MAX]
+    Inteiro topo
+
+FUNÇÃO criarPilha():
+    PilhaSequencial P
+    P.topo = -1 // Indica que a pilha está vazia
+    RETORNAR P
+FIM_FUNÇÃO
+</pre>
+                    </div>
+                </div>
+
+                <!-- 3.2 Buscar (Peek) -->
+                <div id="ps-busca" class="space-y-2">
+                    <h3 class="text-base font-semibold text-amber-300 flex items-center">
+                        <i class="fa-solid fa-eye text-xs mr-2"></i>3.2 Consultar o Topo (Peek)
+                    </h3>
+                    <div class="bg-slate-950 rounded-xl p-4 border border-slate-800 font-mono text-xs text-emerald-400 overflow-x-auto">
+<pre>
+FUNÇÃO topo(P):
+    SE P.topo == -1 ENTÃO:
+        EXIBIR "Erro: Pilha Vazia"
+        RETORNAR NULO
+    FIM_SE
+    RETORNAR P.dados[P.topo]
+FIM_FUNÇÃO
+</pre>
+                    </div>
+                </div>
+
+                <!-- 3.3 Empilhar (Push) -->
+                <div id="ps-insercao" class="space-y-2">
+                    <h3 class="text-base font-semibold text-amber-300 flex items-center">
+                        <i class="fa-solid fa-arrow-down-to-bracket text-xs mr-2"></i>3.3 Empilhar Elemento (Push)
+                    </h3>
+                    <div class="bg-slate-950 rounded-xl p-4 border border-slate-800 font-mono text-xs text-emerald-400 overflow-x-auto">
+<pre>
+FUNÇÃO empilhar(P, valor):
+    SE P.topo == (CAPACIDADE_MAX - 1) ENTÃO:
+        EXIBIR "Erro: Estouro de Pilha (Stack Overflow)"
+        RETORNAR FALSO
+    FIM_SE
+
+    P.topo = P.topo + 1
+    P.dados[P.topo] = valor
+    RETORNAR VERDADEIRO
+FIM_FUNÇÃO
+</pre>
+                    </div>
+                </div>
+
+                <!-- 3.4 Desempilhar (Pop) -->
+                <div id="ps-remocao" class="space-y-2">
+                    <h3 class="text-base font-semibold text-amber-300 flex items-center">
+                        <i class="fa-solid fa-arrow-up-from-bracket text-xs mr-2"></i>3.4 Desempilhar Elemento (Pop)
+                    </h3>
+                    <div class="bg-slate-950 rounded-xl p-4 border border-slate-800 font-mono text-xs text-emerald-400 overflow-x-auto">
+<pre>
+FUNÇÃO desempilhar(P):
+    SE P.topo == -1 ENTÃO:
+        EXIBIR "Erro: Pilha Vazia (Stack Underflow)"
+        RETORNAR NULO
+    FIM_SE
+
+    valorRemovido = P.dados[P.topo]
+    P.topo = P.topo - 1
+    RETORNAR valorRemovido
+FIM_FUNÇÃO
+</pre>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SEÇÃO 4: PILHA ENCADEADA -->
+            <section id="pilha-encadeada" class="bg-slate-900/70 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-6">
+                <div class="border-b border-slate-800 pb-4">
+                    <span class="text-xs font-bold uppercase tracking-wider text-rose-400 bg-rose-500/10 px-2.5 py-1 rounded-md border border-rose-500/20">Seção 4</span>
+                    <h2 class="text-2xl font-bold text-slate-100 mt-2">4. Pilha Encadeada (Linked Stack)</h2>
+                    <p class="text-xs text-slate-400 mt-1">Pilha dinâmica implementada com ponteiros. Permite crescimento flexível sem necessidade de capacidade limite pré-fixada.</p>
+                </div>
+
+                <!-- 4.1 Criação -->
+                <div id="pe-criacao" class="space-y-2">
+                    <h3 class="text-base font-semibold text-rose-300 flex items-center">
+                        <i class="fa-solid fa-code text-xs mr-2"></i>4.1 Criação da Pilha Encadeada
+                    </h3>
+                    <div class="bg-slate-950 rounded-xl p-4 border border-slate-800 font-mono text-xs text-emerald-400 overflow-x-auto">
+<pre>
+ESTRUTURA No:
+    Dado valor
+    Ponteiro proximo
+
+ESTRUTURA PilhaEncadeada:
+    Ponteiro topo
+
+FUNÇÃO criarPilhaEncadeada():
+    PilhaEncadeada P
+    P.topo = NULO
+    RETORNAR P
+FIM_FUNÇÃO
+</pre>
+                    </div>
+                </div>
+
+                <!-- 4.2 Buscar (Peek) -->
+                <div id="pe-busca" class="space-y-2">
+                    <h3 class="text-base font-semibold text-rose-300 flex items-center">
+                        <i class="fa-solid fa-eye text-xs mr-2"></i>4.2 Consultar o Topo (Peek)
+                    </h3>
+                    <div class="bg-slate-950 rounded-xl p-4 border border-slate-800 font-mono text-xs text-emerald-400 overflow-x-auto">
+<pre>
+FUNÇÃO topo(P):
+    SE P.topo == NULO ENTÃO:
+        EXIBIR "Pilha Vazia"
+        RETORNAR NULO
+    FIM_SE
+    RETORNAR P.topo.valor
+FIM_FUNÇÃO
+</pre>
+                    </div>
+                </div>
+
+                <!-- 4.3 Empilhar (Push) -->
+                <div id="pe-insercao" class="space-y-2">
+                    <h3 class="text-base font-semibold text-rose-300 flex items-center">
+                        <i class="fa-solid fa-arrow-down-to-bracket text-xs mr-2"></i>4.3 Empilhar (Push)
+                    </h3>
+                    <div class="bg-slate-950 rounded-xl p-4 border border-slate-800 font-mono text-xs text-emerald-400 overflow-x-auto">
+<pre>
+FUNÇÃO empilhar(P, valor):
+    Ponteiro novoNo = ALOCAR_MEMORIA(No)
+    novoNo.valor = valor
+    
+    // O novo nó aponta para o topo anterior
+    novoNo.proximo = P.topo
+    
+    // O topo é atualizado para o novo nó
+    P.topo = novoNo
+    RETORNAR VERDADEIRO
+FIM_FUNÇÃO
+</pre>
+                    </div>
+                </div>
+
+                <!-- 4.4 Desempilhar (Pop) -->
+                <div id="pe-remocao" class="space-y-2">
+                    <h3 class="text-base font-semibold text-rose-300 flex items-center">
+                        <i class="fa-solid fa-arrow-up-from-bracket text-xs mr-2"></i>4.4 Desempilhar (Pop)
+                    </h3>
+                    <div class="bg-slate-950 rounded-xl p-4 border border-slate-800 font-mono text-xs text-emerald-400 overflow-x-auto">
+<pre>
+FUNÇÃO desempilhar(P):
+    SE P.topo == NULO ENTÃO:
+        EXIBIR "Erro: Pilha Vazia (Underflow)"
+        RETORNAR NULO
+    FIM_SE
+
+    Ponteiro noRemovido = P.topo
+    Dado valor = noRemovido.valor
+
+    // Atualiza o topo para o próximo nó
+    P.topo = P.topo.proximo
+
+    LIBERAR_MEMORIA(noRemovido)
+    RETORNAR valor
+FIM_FUNÇÃO
+</pre>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-slate-900 border-t border-slate-800 py-6 text-center text-xs text-slate-500 mt-12">
+        <p>Material de apoio pedagógico para aulas de Estruturas de Dados.</p>
+    </footer>
+
+</body>
+</html>

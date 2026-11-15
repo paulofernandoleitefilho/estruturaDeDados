@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualizador Interativo - Pilha Encadeada</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .code-font {
+            font-family: 'Fira Code', monospace;
+        }
+        
+        /* Transição e Animação dos Nós da Pilha Encadeada */
+        .stack-node {
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes pushAnim {
+            0% { transform: translateY(-40px) scale(0.8); opacity: 0; }
+            100% { transform: translateY(0) scale(1); opacity: 1; }
+        }
+        .anim-push {
+            animation: pushAnim 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+
+        @keyframes popAnim {
+            0% { transform: translateY(0) scale(1); opacity: 1; }
+            100% { transform: translateY(-50px) scale(0.7); opacity: 0; }
+        }
+        .anim-pop {
+            animation: popAnim 0.4s ease-in forwards;
+        }
+
+        @keyframes highlightPulse {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.7); }
+            50% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(244, 63, 94, 0); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(244, 63, 94, 0); }
+        }
+        .highlight-active {
+            animation: highlightPulse 0.8s infinite;
+            border-color: #f43f5e !important;
+            background-color: #4c0519 !important;
+        }
+
+        @keyframes successPulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.08); box-shadow: 0 0 20px rgba(16, 185, 129, 0.6); }
+            100% { transform: scale(1); }
+        }
+        .highlight-found {
+            animation: successPulse 0.7s ease-in-out forwards;
+            border-color: #10b981 !important;
+            background-color: #064e3b !important;
+        }
+
+        /* Glassmorphism panel */
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.75);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col justify-between overflow-x-hidden">
+
+    <!-- Header / Nav -->
+    <header class="bg-slate-900 border-b border-slate-800 p-4 shadow-xl sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+            <div class="flex items-center space-x-3">
+                <div class="bg-rose-600 p-2.5 rounded-xl shadow-lg shadow-rose-500/30">
+                    <i class="fa-solid fa-cubes-stacked text-xl text-white"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold bg-gradient-to-r from-rose-400 to-amber-400 bg-clip-text text-transparent">
+                        Visualizador de Pilha Encadeada (Linked Stack - LIFO)
+                    </h1>
+                    <p class="text-xs text-slate-400">Alocação Dinâmica por Ponteiros &bull; Last-In, First-Out</p>
+                </div>
+            </div>
+
+            <!-- Slider de Velocidade -->
+            <div class="flex items-center bg-slate-800/80 px-4 py-2 rounded-xl border border-slate-700/50">
+                <i class="fa-solid fa-gauge-high text-xs text-slate-400 mr-3"></i>
+                <span class="text-xs text-slate-300 font-medium mr-3">Velocidade:</span>
+                <input type="range" id="speedSlider" min="200" max="1500" value="700" step="100" class="w-24 accent-rose-500 cursor-pointer">
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="max-w-7xl mx-auto w-full p-4 md:p-6 flex-1 flex flex-col gap-6">
+
+        <!-- Painel de Controles Principal -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+
+            <!-- Card 1: Criar Pilha Vazia -->
+            <div class="lg:col-span-3 glass-panel p-4 rounded-2xl flex flex-col justify-between shadow-xl">
+                <div>
+                    <div class="flex items-center text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
+                        <i class="fa-solid fa-rotate-right mr-2 text-rose-400"></i> Inicialização
+                    </div>
+                    <p class="text-xs text-slate-400 mb-2">Zera a pilha redefinindo o ponteiro do Topo para Nulo (<code>TOP = NULL</code>).</p>
+                    <div class="mb-3">
+                        <label class="block text-[11px] font-semibold text-slate-400 mb-1">TAMANHO MÁXIMO</label>
+                        <input type="number" id="maxCapacityInput" value="6" min="1" max="12" onchange="updateMaxCapacity()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1 text-slate-100 focus:outline-none focus:border-rose-500 code-font text-sm">
+                    </div>
+                </div>
+                <button id="btnCreateEmpty" onclick="createEmptyStack()" class="w-full py-2.5 px-4 bg-rose-600/20 hover:bg-rose-600/30 text-rose-300 border border-rose-500/40 rounded-xl font-semibold text-sm transition-all flex items-center justify-center space-x-2 group active:scale-95">
+                    <i class="fa-solid fa-trash-can group-hover:rotate-12 transition-transform"></i>
+                    <span>Criar Pilha Vazia</span>
+                </button>
+            </div>
+
+            <!-- Card 2: Inserção de Item (Push Encadeado) -->
+            <div class="lg:col-span-5 glass-panel p-4 rounded-2xl shadow-xl flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
+                        <i class="fa-solid fa-arrow-down-to-bracket mr-2 text-emerald-400"></i> Empilhar (Push)
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-400 mb-1">VALOR DO ITEM</label>
+                        <input type="text" id="insertValue" placeholder="Ex: 99" maxlength="4" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 placeholder-slate-600 focus:outline-none focus:border-rose-500 code-font text-sm">
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <button id="btnPush" onclick="pushItem()" class="w-full py-2.5 px-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-semibold text-xs shadow-lg shadow-emerald-900/30 transition-all flex items-center justify-center space-x-2 active:scale-95">
+                        <i class="fa-solid fa-plus-circle"></i>
+                        <span>Empilhar Item (Push Encadeado)</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Card 3: Exclusão (Pop) e Indicação de Posição (Search) -->
+            <div class="lg:col-span-4 glass-panel p-4 rounded-2xl shadow-xl flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
+                        <i class="fa-solid fa-magnifying-glass mr-2 text-amber-400"></i> Ações na Pilha
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-400 mb-1">VALOR PARA BUSCAR</label>
+                        <input type="text" id="searchValue" placeholder="Valor para buscar posição" maxlength="4" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-slate-100 placeholder-slate-600 focus:outline-none focus:border-amber-500 code-font text-sm mb-3">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <button id="btnSearch" onclick="searchItem()" class="py-2 px-3 bg-amber-600 hover:bg-amber-500 text-white rounded-xl font-semibold text-xs shadow-lg shadow-amber-900/30 transition-all flex items-center justify-center space-x-1.5 active:scale-95">
+                        <i class="fa-solid fa-crosshair"></i>
+                        <span>Indicar Posição</span>
+                    </button>
+                    <button id="btnPop" onclick="popItem()" class="py-2 px-3 bg-rose-600 hover:bg-rose-500 text-white rounded-xl font-semibold text-xs shadow-lg shadow-rose-900/30 transition-all flex items-center justify-center space-x-1.5 active:scale-95">
+                        <i class="fa-solid fa-arrow-up-from-bracket"></i>
+                        <span>Desempilhar (Pop)</span>
+                    </button>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Visualizador da Estrutura Encadeada Vertical -->
+        <div class="glass-panel rounded-2xl p-6 shadow-2xl relative min-h-[420px] flex flex-col justify-between">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-slate-800 pb-3 mb-4 gap-2">
+                <div class="flex items-center space-x-2">
+                    <span class="w-3 h-3 rounded-full bg-rose-500 animate-pulse"></span>
+                    <h2 class="text-sm font-semibold uppercase tracking-wider text-slate-300">Estrutura Visual da Pilha Encadeada (Nós &amp; Ponteiros `next`)</h2>
+                </div>
+                <div class="flex items-center space-x-4 text-xs font-mono">
+                    <div class="bg-slate-900 px-3 py-1 rounded-lg border border-slate-800">
+                        Ponteiro TOP: <span id="topAddressText" class="text-rose-400 font-bold">NULL</span>
+                    </div>
+                    <div class="bg-slate-900 px-3 py-1 rounded-lg border border-slate-800">
+                        Total de Nós: <span id="stackSize" class="text-cyan-400 font-bold">0</span> / <span id="maxCapacityDisplay" class="text-slate-400 font-bold">6</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Grade Vertical de Nós Encadeados (Do Topo para a Base) -->
+            <div class="flex justify-center items-center py-4">
+                <div id="nodesContainer" class="w-full max-w-lg flex flex-col gap-3 p-4 bg-slate-950/80 rounded-2xl border-2 border-slate-800/80 shadow-inner min-h-[220px]">
+                    <!-- Os nós encadeados serão gerados via JS (do Topo no topo visual até a Base) -->
+                </div>
+            </div>
+
+            <!-- Legenda explicativa -->
+            <div class="flex flex-wrap items-center justify-center gap-4 pt-4 border-t border-slate-800 text-xs text-slate-400">
+                <div class="flex items-center space-x-1.5">
+                    <span class="w-3 h-3 rounded-sm bg-slate-900 border border-rose-500"></span>
+                    <span>Nó no TOPO</span>
+                </div>
+                <div class="flex items-center space-x-1.5">
+                    <span class="w-3 h-3 rounded-sm bg-slate-900 border border-slate-700"></span>
+                    <span>Nó Encadeado</span>
+                </div>
+                <div class="flex items-center space-x-1.5">
+                    <span class="w-3 h-3 rounded-sm bg-rose-950 border border-rose-500"></span>
+                    <span>Nó em Inspeção</span>
+                </div>
+                <div class="flex items-center space-x-1.5">
+                    <span class="w-3 h-3 rounded-sm bg-emerald-950 border border-emerald-500"></span>
+                    <span>Nó Encontrado/Criado</span>
+                </div>
+                <div class="flex items-center space-x-1.5">
+                    <i class="fa-solid fa-arrow-down text-cyan-400 text-xs"></i>
+                    <span>Ponteiro `next`</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Painel de Explicação / Caixa de Texto Lúdica Inferior -->
+        <div class="glass-panel rounded-2xl p-5 shadow-xl border-l-4 border-l-rose-500 relative">
+            <div class="flex items-center justify-between mb-2">
+                <div class="flex items-center space-x-2">
+                    <i class="fa-solid fa-terminal text-rose-400"></i>
+                    <h3 class="text-sm font-semibold text-slate-200">Painel Explicativo das Operações</h3>
+                </div>
+                <span id="statusBadge" class="text-[10px] font-bold uppercase tracking-widest px-2.5 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30">
+                    Aguardando Comandos
+                </span>
+            </div>
+
+            <!-- Caixa com texto descritivo -->
+            <div id="explanationText" class="text-sm text-slate-300 leading-relaxed font-sans bg-slate-950/70 p-4 rounded-xl border border-slate-800/80 min-h-[75px]">
+                Seja bem-vindo à simulação de <strong>Pilha Encadeada</strong>! Nesta estrutura dinâmica, cada novo elemento é alocado dinamicamente como um Nó contendo o seu <code>Valor</code> e um ponteiro <code>next</code> direcionado para o antigo topo.
+            </div>
+
+            <!-- Descrição detalhada dos botões requeridos -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 mt-4 pt-3 border-t border-slate-800/60 text-xs">
+                <div class="bg-slate-900/60 p-3 rounded-xl border border-slate-800">
+                    <span class="font-semibold text-rose-400 flex items-center mb-1">
+                        <i class="fa-solid fa-trash-can mr-1.5"></i> 1. Pilha Vazia
+                    </span>
+                    <span class="text-slate-400">Define o ponteiro `TOP = NULL` e libera todos os nós encadeados da memória simulada.</span>
+                </div>
+
+                <div class="bg-slate-900/60 p-3 rounded-xl border border-slate-800">
+                    <span class="font-semibold text-emerald-400 flex items-center mb-1">
+                        <i class="fa-solid fa-arrow-down-to-bracket mr-1.5"></i> 2. Inclusão (Push)
+                    </span>
+                    <span class="text-slate-400">Aloca um novo Nó, faz seu ponteiro `next` apontar para o `TOP` atual e atualiza `TOP = novoNo`.</span>
+                </div>
+
+                <div class="bg-slate-900/60 p-3 rounded-xl border border-slate-800">
+                    <span class="font-semibold text-rose-400 flex items-center mb-1">
+                        <i class="fa-solid fa-arrow-up-from-bracket mr-1.5"></i> 3. Exclusão (Pop)
+                    </span>
+                    <span class="text-slate-400">Remove o nó apontado por `TOP`, atualizando `TOP = TOP.next` e liberando o nó removido.</span>
+                </div>
+
+                <div class="bg-slate-900/60 p-3 rounded-xl border border-slate-800">
+                    <span class="font-semibold text-amber-400 flex items-center mb-1">
+                        <i class="fa-solid fa-crosshair mr-1.5"></i> 4. Indicar Posição
+                    </span>
+                    <span class="text-slate-400">Navega pelos ponteiros `next` do `TOP` até o nó base, retornando o índice relativo (0 = TOPO).</span>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-slate-900 border-t border-slate-800 py-3 text-center text-xs text-slate-500">
+        Ensino de Estruturas de Dados &bull; Animação Interativa de Pilha Encadeada
+    </footer>
+
+    <!-- Script de Lógica da Pilha Encadeada -->
+    <script>
+        // Classe do Nó da Pilha Encadeada
+        class StackNode {
+            constructor(value) {
+                this.value = value;
+                this.next = null; // Ponteiro para o nó abaixo na pilha
+                // Endereço de memória hexadecimal simulado
+                this.address = '0x' + Math.floor(Math.random() * 8999 + 1000).toString(16).toUpperCase();
+            }
+        }
+
+        // Estado Global da Pilha Encadeada
+        let topNode = null; // Head/Top da Pilha
+        let nodeCount = 0;
+        let maxCapacity = 6;
+        let isAnimating = false;
+
+        function updateMaxCapacity() {
+            const input = document.getElementById('maxCapacityInput');
+            let val = parseInt(input.value);
+            if (isNaN(val) || val < 1) val = 1;
+            if (val > 12) val = 12;
+            input.value = val;
+            maxCapacity = val;
+            document.getElementById('maxCapacityDisplay').innerText = maxCapacity;
+
+            // Se o número de nós exceder o novo limite, trunca a pilha
+            if (nodeCount > maxCapacity) {
+                let current = topNode;
+                let count = 1;
+                while (current !== null && count < maxCapacity) {
+                    current = current.next;
+                    count++;
+                }
+                if (current) {
+                    current.next = null;
+                    nodeCount = maxCapacity;
+                }
+                renderLinkedStack();
+            }
+            setExplanation(`<strong>Capacidade Máxima Atualizada:</strong> O limite da pilha encadeada foi definido para <code>${maxCapacity}</code> nós.`, "Pronto");
+        }
+
+        window.onload = function() {
+            updateMaxCapacity();
+            // Inicializar com 3 nós para demonstração inicial
+            const values = ["15", "30", "50"];
+            values.forEach(val => {
+                if (nodeCount < maxCapacity) {
+                    const node = new StackNode(val);
+                    node.next = topNode;
+                    topNode = node;
+                    nodeCount++;
+                }
+            });
+
+            renderLinkedStack();
+            setExplanation(
+                "<strong>Pilha Encadeada Inicializada:</strong> Temos 3 nós alocados dinamicamente na memória (Capacidade Máxima: <code>" + maxCapacity + "</code>). O nó no <strong>TOPO</strong> tem valor <code>50</code> (Endereço: <code>" + topNode.address + "</code>) e aponta para o nó <code>30</code>.",
+                "Pronto"
+            );
+        };
+
+        // Delay dinâmico via slider
+        function getDelay() {
+            const slider = document.getElementById('speedSlider');
+            return 1700 - parseInt(slider.value);
+        }
+
+        const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+        // Atualiza o painel explicativo inferior
+        function setExplanation(text, status = "Processando") {
+            const expEl = document.getElementById('explanationText');
+            const badgeEl = document.getElementById('statusBadge');
+            
+            expEl.innerHTML = text;
+            badgeEl.innerText = status;
+
+            if (status === "Sucesso") {
+                badgeEl.className = "text-[10px] font-bold uppercase tracking-widest px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30";
+            } else if (status === "Erro" || status === "Não Encontrado") {
+                badgeEl.className = "text-[10px] font-bold uppercase tracking-widest px-2.5 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30";
+            } else if (status === "Buscando" || status === "Empilhando" || status === "Desempilhando") {
+                badgeEl.className = "text-[10px] font-bold uppercase tracking-widest px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 animate-pulse";
+            } else {
+                badgeEl.className = "text-[10px] font-bold uppercase tracking-widest px-2.5 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30";
+            }
+        }
+
+        // Habilita/Desabilita botões
+        function toggleControls(disabled) {
+            isAnimating = disabled;
+            const buttons = document.querySelectorAll('button, input');
+            buttons.forEach(btn => {
+                if (btn.id !== 'speedSlider') {
+                    btn.disabled = disabled;
+                    if(disabled) btn.classList.add('opacity-50', 'cursor-not-allowed');
+                    else btn.classList.remove('opacity-50', 'cursor-not-allowed');
+                }
+            });
+        }
+
+        // Renderiza a Pilha Encadeada no DOM
+        function renderLinkedStack(activeAddress = null, highlightState = 'active') {
+            const container = document.getElementById('nodesContainer');
+            document.getElementById('stackSize').innerText = nodeCount;
+            document.getElementById('topAddressText').innerText = topNode ? topNode.address : 'NULL';
+            
+            container.innerHTML = '';
+
+            if (!topNode) {
+                container.innerHTML = `
+                    <div class="flex flex-col items-center justify-center py-12 text-slate-500 space-y-2">
+                        <i class="fa-solid fa-circle-exclamation text-3xl text-slate-600 mb-1"></i>
+                        <span class="font-mono text-sm">TOP &rarr; NULL</span>
+                        <span class="text-xs text-slate-600">A Pilha Encadeada está completamente vazia.</span>
+                    </div>
+                `;
+                return;
+            }
+
+            let current = topNode;
+            let index = 0;
+
+            while (current !== null) {
+                const isTop = index === 0;
+                const isBase = current.next === null;
+                const isHighlighted = current.address === activeAddress;
+
+                let styleClass = "border-slate-700 bg-slate-900";
+                if (isTop) {
+                    styleClass = "border-rose-500 bg-rose-950/40 shadow-lg shadow-rose-950/40";
+                }
+
+                if (isHighlighted) {
+                    if (highlightState === 'active') styleClass = "highlight-active";
+                    if (highlightState === 'found') styleClass = "highlight-found";
+                    if (highlightState === 'push') styleClass = "border-emerald-500 bg-emerald-950/80 anim-push";
+                    if (highlightState === 'pop') styleClass = "border-rose-500 bg-rose-950/80 anim-pop";
+                }
+
+                const nodeWrapper = document.createElement('div');
+                nodeWrapper.className = "flex flex-col items-center w-full stack-node";
+
+                nodeWrapper.innerHTML = `
+                    <!-- Cartão do Nó -->
+                    <div class="w-full max-w-md bg-slate-900 border-2 ${styleClass} rounded-xl overflow-hidden shadow-md px-4 py-3 font-mono flex items-center justify-between">
+                        <!-- Coluna Esquerda: Posição e Endereço -->
+                        <div class="flex items-center space-x-3">
+                            <span class="text-xs font-semibold ${isTop ? 'text-rose-400' : 'text-slate-400'}">[Índice ${index}]</span>
+                            <span class="text-[10px] text-indigo-300 bg-slate-950 px-2 py-0.5 rounded border border-slate-800">
+                                End: ${current.address}
+                            </span>
+                        </div>
+
+                        <!-- Coluna Central: Valor do Nó -->
+                        <div class="text-center">
+                            <span class="text-[9px] uppercase font-bold text-slate-500 block">VALOR</span>
+                            <span class="text-base font-bold text-amber-400">${current.value}</span>
+                        </div>
+
+                        <!-- Coluna Direita: Ponteiro NEXT & Tag TOPO -->
+                        <div class="flex items-center space-x-2">
+                            <div class="text-right">
+                                <span class="text-[9px] uppercase font-bold text-slate-500 block">NEXT</span>
+                                <span class="text-[11px] font-semibold ${isBase ? 'text-rose-400' : 'text-cyan-400'}">
+                                    ${isBase ? 'NULL' : current.next.address}
+                                </span>
+                            </div>
+                            ${isTop ? `
+                                <span class="bg-rose-500 text-white text-[10px] font-bold px-2 py-1 rounded-md shadow ml-2 flex items-center space-x-1">
+                                    <i class="fa-solid fa-arrow-down text-[9px]"></i>
+                                    <span>TOP</span>
+                                </span>
+                            ` : ''}
+                        </div>
+                    </div>
+
+                    <!-- Indicador visual do ponteiro NEXT para o próximo nó -->
+                    ${!isBase ? `
+                        <div class="py-1 flex flex-col items-center text-cyan-400 opacity-80">
+                            <i class="fa-solid fa-arrow-down text-sm animate-pulse"></i>
+                            <span class="text-[9px] font-mono text-slate-500">ptr.next</span>
+                        </div>
+                    ` : `
+                        <div class="py-1 text-[10px] text-slate-600 font-mono italic">
+                            &perp; Base da Pilha (Fim dos ponteiros)
+                        </div>
+                    `}
+                `;
+
+                container.appendChild(nodeWrapper);
+                current = current.next;
+                index++;
+            }
+        }
+
+        // 1. AÇÃO: Criar Pilha Vazia
+        async function createEmptyStack() {
+            if (isAnimating) return;
+            toggleControls(true);
+
+            setExplanation(
+                "<strong>Ação: Criar Pilha Vazia</strong><br>Desconectando o ponteiro <code>TOP</code> (<code>TOP = NULL</code>) e liberando todos os nós alocados dinamicamente na memória.",
+                "Processando"
+            );
+            await sleep(400);
+
+            topNode = null;
+            nodeCount = 0;
+            renderLinkedStack();
+
+            setExplanation(
+                "<strong>Pilha Encadeada Vazia Criada!</strong><br>O ponteiro do topo aponta para <code>NULL</code> (0 nós ativos). A pilha está pronta para novos empilhamentos via <em>Push</em>.",
+                "Sucesso"
+            );
+            toggleControls(false);
+        }
+
+        // 2. AÇÃO: Inserção de Item (Push Encadeado)
+        async function pushItem() {
+            if (isAnimating) return;
+            const valInput = document.getElementById('insertValue');
+            const value = valInput.value.trim();
+
+            if (!value) {
+                setExplanation("<strong>Aviso:</strong> Digite um valor no campo acima para empilhar.", "Erro");
+                valInput.focus();
+                return;
+            }
+
+            if (nodeCount >= maxCapacity) {
+                setExplanation(`<strong>Erro (Tamanho Máximo Atingido):</strong> A pilha encadeada atingiu o tamanho máximo informado de <strong>${maxCapacity}</strong> nós! O tamanho máximo foi atingido.`, "Erro");
+                return;
+            }
+
+            toggleControls(true);
+            const newNode = new StackNode(value);
+
+            setExplanation(
+                `<strong>Passo 1/2 (Alocação Dinâmica):</strong> Criado novo nó com valor <code>${newNode.value}</code> no endereço <code>${newNode.address}</code>.<br>Conectando o ponteiro <code>next</code> do novo nó para o atual TOP (${topNode ? topNode.address : 'NULL'})...`,
+                "Empilhando"
+            );
+
+            // Ajusta ponteiro next para apontar para o antigo top
+            newNode.next = topNode;
+            topNode = newNode;
+            nodeCount++;
+
+            renderLinkedStack(newNode.address, 'push');
+            await sleep(getDelay());
+
+            setExplanation(
+                `<strong>Sucesso!</strong> O elemento <code>${newNode.value}</code> foi empilhado no topo. O ponteiro <code>TOP</code> agora aponta para o endereço <code>${newNode.address}</code>.`,
+                "Sucesso"
+            );
+
+            valInput.value = '';
+            toggleControls(false);
+        }
+
+        // 3. AÇÃO: Exclusão de Item (Pop Encadeado)
+        async function popItem() {
+            if (isAnimating) return;
+
+            if (!topNode) {
+                setExplanation("<strong>Erro (Stack Underflow):</strong> A pilha encadeada está vazia! Não há nenhum nó no TOP para remover.", "Erro");
+                return;
+            }
+
+            toggleControls(true);
+
+            const poppedNode = topNode;
+            setExplanation(
+                `<strong>Desempilhando (Pop):</strong> Inspecionando o nó <code>${poppedNode.value}</code> no <strong>TOP</strong> (Endereço: <code>${poppedNode.address}</code>)...`,
+                "Desempilhando"
+            );
+
+            renderLinkedStack(poppedNode.address, 'pop');
+            await sleep(getDelay());
+
+            // Atualiza TOP para o próximo nó
+            topNode = topNode.next;
+            nodeCount--;
+            renderLinkedStack();
+
+            setExplanation(
+                `<strong>Sucesso!</strong> Nó <code>${poppedNode.value}</code> desempilhado e sua memória (<code>${poppedNode.address}</code>) liberada! O novo TOP passa a ser <code>${topNode ? topNode.address : 'NULL'}</code>.`,
+                "Sucesso"
+            );
+
+            toggleControls(false);
+        }
+
+        // 4. AÇÃO: Indicar Posição (Busca Encadeada na Pilha)
+        async function searchItem() {
+            if (isAnimating) return;
+            const searchInput = document.getElementById('searchValue');
+            const targetVal = searchInput.value.trim();
+
+            if (!targetVal) {
+                setExplanation("<strong>Aviso:</strong> Digite o valor que deseja buscar no campo 'VALOR PARA BUSCAR'.", "Erro");
+                searchInput.focus();
+                return;
+            }
+
+            if (!topNode) {
+                setExplanation("<strong>Aviso:</strong> A pilha está vazia! Não existem nós encadeados para buscar.", "Erro");
+                return;
+            }
+
+            toggleControls(true);
+            setExplanation(
+                `<strong>Iniciando Busca por Ponteiros:</strong> Seguidos os ponteiros <code>next</code> a partir do <strong>TOP</strong> (Endereço: <code>${topNode.address}</code>)...`,
+                "Buscando"
+            );
+
+            let current = topNode;
+            let index = 0;
+            let found = false;
+
+            while (current !== null) {
+                renderLinkedStack(current.address, 'active');
+                setExplanation(
+                    `Nó no <strong>Índice ${index}</strong> (End: <code>${current.address}</code>) &bull; Valor atual: <code>${current.value}</code>. Comparando com <code>${targetVal}</code>...`,
+                    "Buscando"
+                );
+                await sleep(getDelay());
+
+                if (current.value === targetVal) {
+                    found = true;
+                    renderLinkedStack(current.address, 'found');
+                    setExplanation(
+                        `<strong>🎉 Item Encontrado!</strong><br>O valor <code>${targetVal}</code> foi localizado no **ÍNDICE ${index}** a partir do topo (${index === 0 ? 'Exatamente no TOPO' : `${index} nó(s) abaixo do TOP`}) no endereço <code>${current.address}</code>.`,
+                        "Sucesso"
+                    );
+                    break;
+                }
+
+                current = current.next;
+                index++;
+            }
+
+            if (!found) {
+                renderLinkedStack();
+                setExplanation(
+                    `<strong>Busca Concluída:</strong> O valor <code>${targetVal}</code> **NÃO** foi localizado na Pilha Encadeada após percorrer todos os ${nodeCount} nós.`,
+                    "Não Encontrado"
+                );
+            }
+
+            toggleControls(false);
+        }
+    </script>
+</body>
+</html>
