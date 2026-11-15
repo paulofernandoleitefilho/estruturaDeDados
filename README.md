@@ -368,7 +368,7 @@ Figuras elaboradas pelo autor, inspiradas na representação usual desses livros
 
 | Nome | GitHub |
 |------|--------|
-| _Nome do integrante_ | [@usuario](https://github.com/usuario) |
+| Paulo Fernando Leite Filho | [@usuario](https://github.com/paulofernandoleitefilho/) |
 
 **Orientação:** Professor PhD Paulo Fernando Leite Filho
 
